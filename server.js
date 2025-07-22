@@ -15,7 +15,12 @@ const app = express();
 // Middlewares
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173", // React frontend URL or your domain
+    credentials: true, // Allow cookies
+  })
+);
 
 // Routes
 app.use("/api/users", userRoutes);
