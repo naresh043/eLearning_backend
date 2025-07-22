@@ -1,29 +1,35 @@
 const express = require("express");
-const dbConnect = require("./src/config/db"); // No destructuring since you did `module.exports = dbConnect`
-const cors=require("cors")
+require("dotenv").config();
+const dbConnect = require("./src/config/db");
+const cors = require("cors");
+const cookieParser = require("cookie-parser");
+
 const userRoutes = require("./src/routes/userRoutes");
 const courseRoutes = require("./src/routes/courseRoutes");
 const courseRoadmapRoutes = require("./src/routes/courseRoadmapRoutes");
-
 const errorMiddleware = require("./src/middleware/errorMiddleware");
-const cookieParser = require("cookie-parser");
+
+const PORT = process.env.PORT || 3000;
 const app = express();
+
+// Middlewares
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors())
+app.use(cors());
 
+// Routes
 app.use("/api/users", userRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/courseroadmap", courseRoadmapRoutes);
 
+// Error Handler
 app.use(errorMiddleware);
-
 dbConnect() // Call the function
   .then(() => {
     console.log("Database connected successfully!");
 
-    app.listen(3000, () => {
-      console.log("Server is running on port 3000");
+    app.listen(PORT, () => {
+      console.log("Server is running on port" + PORT);
     });
   })
   .catch((err) => {

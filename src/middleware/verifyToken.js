@@ -11,7 +11,7 @@ const verifyToken = async (req, res, next) => {
         .json({ success: false, message: "No token provided" });
     }
 
-    const decoded = jwt.verify(token, "eLearning");
+    const decoded = jwt.verify(token,process.env.JWT_SECRET);
     console.log(decoded)
 
     // Find the user by ID from token payload
