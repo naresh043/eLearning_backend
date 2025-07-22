@@ -43,7 +43,13 @@ router.post("/register", async (req, res, next) => {
     await newUser.save();
     let token = await newUser.getJWT();
 
-    res.cookie("token", token);
+    // Secure Cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+    });
     const userResponse = newUser.toObject();
     delete userResponse.password;
     res.status(201).json({
@@ -84,7 +90,13 @@ router.post("/login", async (req, res, next) => {
     }
 
     let token = await user.getJWT();
-    res.cookie("token", token);
+    // Secure Cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+    });
 
     const userResponse = user.toObject();
     delete userResponse.password;
@@ -157,4 +169,21 @@ router.get("/profile", verifyToken, (req, res) => {
   });
 });
 
+router.post("/logout", (req, res, next) => {
+  try {
+    // Clear cookie (must match options used at login)
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+    return res.status(200).json({
+      success: true,
+      message: "Logout successful.",
+      hadToken, // helpful for debugging; remove in prod if you want
+    });
+  } catch (err) {
+    return next(err); // forward to errorMiddleware
+  }
+});
 module.exports = router;
