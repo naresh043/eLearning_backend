@@ -171,6 +171,7 @@ router.get("/profile", verifyToken, (req, res) => {
 
 router.post("/logout", (req, res, next) => {
   try {
+    const hadToken = Boolean(req.cookies?.token);
     // Clear cookie (must match options used at login)
     res.clearCookie("token", {
       httpOnly: true,
