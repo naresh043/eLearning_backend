@@ -44,13 +44,14 @@ router.post("/register", async (req, res, next) => {
     let token = await newUser.getJWT();
 
     // Secure Cookie
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
-      path: "/",
-    });
+    res.cookie("token", token);
+    // res.cookie("token", token, {
+    //   httpOnly: true,
+    //   secure: process.env.NODE_ENV === "production",
+    //   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    //   maxAge: 24 * 60 * 60 * 1000, // 1 day
+    //   path: "/",
+    // });
     const userResponse = newUser.toObject();
     delete userResponse.password;
     res.status(201).json({
@@ -92,13 +93,14 @@ router.post("/login", async (req, res, next) => {
 
     let token = await user.getJWT();
     // Secure Cookie
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
-      path: "/",
-    });
+    res.cookie("token", token);
+    // res.cookie("token", token, {
+    //   httpOnly: true,
+    //   secure: process.env.NODE_ENV === "production",
+    //   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    //   maxAge: 24 * 60 * 60 * 1000, // 1 day
+    //   path: "/",
+    // });
 
     const userResponse = user.toObject();
     delete userResponse.password;
