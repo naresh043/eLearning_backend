@@ -32,6 +32,13 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+
+userSchema.virtual("enrollments", {
+  ref: "Enrollment",
+  localField: "_id",
+  foreignField: "user",
+});
+
 // Instance: sign JWT for this user
 userSchema.methods.getJWT = function () {
   return jwt.sign(
@@ -45,6 +52,10 @@ userSchema.methods.getJWT = function () {
 userSchema.methods.validatePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
+
+
+userSchema.set("toObject", { virtuals: true });
+userSchema.set("toJSON", { virtuals: true });
 
 const User = mongoose.model("User", userSchema);
 module.exports = User;

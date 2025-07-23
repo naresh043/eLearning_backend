@@ -101,6 +101,11 @@ const courseSchema = new mongoose.Schema(
       trim: true,
     },
     reviews: [reviewSchema],
+    enrolledCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   { timestamps: true }
 );

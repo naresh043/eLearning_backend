@@ -93,7 +93,14 @@ router.post("/login", async (req, res, next) => {
 
     let token = await user.getJWT();
     // Secure Cookie
-    res.cookie("token", token);
+      res.cookie("token", token, {
+        httpOnly: true, // Prevents client-side JS access
+        secure: false, // Only send cookie over HTTPS in production
+        sameSite: "lax",
+        maxAge: 24 * 60 * 60 * 1000, // 1 day (cookie persists)
+        path: "/", // Accessible for all routes
+      });
+
     // res.cookie("token", token, {
     //   httpOnly: true,
     //   secure: process.env.NODE_ENV === "production",

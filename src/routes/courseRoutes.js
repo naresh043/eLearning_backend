@@ -1,9 +1,10 @@
 const express = require("express");
 const Course = require("../models/Course");
 const router = express.Router();
+const verifyToken=require("../middleware/verifyToken")
 
 // GET /api/courses  -> Get all courses
-router.get("/", async (req, res, next) => {
+router.get("/",verifyToken, async (req, res, next) => {
   try {
     const courses = await Course.find().sort({ createdAt: -1 });
     res.json({
@@ -17,7 +18,7 @@ router.get("/", async (req, res, next) => {
 });
 
 // GET /api/courses/:id  -> Get one course by Mongo _id
-router.get("/:id", async (req, res, next) => {
+router.get("/:id",verifyToken, async (req, res, next) => {
   try {
     const course = await Course.findById(req.params.id);
     if (!course) {
@@ -32,7 +33,7 @@ router.get("/:id", async (req, res, next) => {
 });
 
 // POST /api/courses  -> Create new course
-router.post("/", async (req, res, next) => {
+router.post("/",verifyToken, async (req, res, next) => {
   try {
     const course = await Course.create(req.body);
     res.status(201).json({
@@ -52,7 +53,7 @@ router.post("/", async (req, res, next) => {
 });
 
 // PUT /api/courses/:id  -> Update existing course
-router.put("/:id", async (req, res, next) => {
+router.put("/:id",verifyToken, async (req, res, next) => {
   try {
     const course = await Course.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
@@ -74,7 +75,7 @@ router.put("/:id", async (req, res, next) => {
 });
 
 // DELETE /api/courses/:id  -> Delete a course
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", verifyToken,async (req, res, next) => {
   try {
     const course = await Course.findByIdAndDelete(req.params.id);
     if (!course) {
@@ -93,7 +94,7 @@ router.delete("/:id", async (req, res, next) => {
 });
 
 //review routes
-router.post("/:id/reviews", async (req, res, next) => {
+router.post("/:id/reviews",verifyToken, async (req, res, next) => {
   try {
     const id = req.params.id;
     const course = await Course.findById(id);
@@ -112,7 +113,7 @@ router.post("/:id/reviews", async (req, res, next) => {
 });
 
 // POST /api/courses/review/by-name/:courseName
-router.post("/review/by-name/:courseName", async (req, res, next) => {
+router.post("/review/by-name/:courseName", verifyToken,async (req, res, next) => {
   try {
     const courseName=req.params.courseName;
     console.log(courseName)
@@ -133,7 +134,7 @@ router.post("/review/by-name/:courseName", async (req, res, next) => {
 
 // Get all reviews for a course
 // GET /api/courses/:id/reviews
-router.get("/:id/reviews", async (req, res, next) => {
+router.get("/:id/reviews",verifyToken, async (req, res, next) => {
   try {
     const course = await Course.findById(req.params.id);
     if (!course)
@@ -153,7 +154,7 @@ router.get("/:id/reviews", async (req, res, next) => {
 
 // Get all reviews from all courses
 // GET /api/courses/reviews/all
-router.get("/reviews/all", async (req, res, next) => {
+router.get("/reviews/all",verifyToken,async (req, res, next) => {
   try {
     const courses = await Course.find();
 

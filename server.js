@@ -6,7 +6,9 @@ const cookieParser = require("cookie-parser");
 
 const userRoutes = require("./src/routes/userRoutes");
 const courseRoutes = require("./src/routes/courseRoutes");
+const authRoutes = require("./src/routes/authRoutes");
 const courseRoadmapRoutes = require("./src/routes/courseRoadmapRoutes");
+const enrollmentRoutes = require("./src/routes/enrollmentRoutes");
 const errorMiddleware = require("./src/middleware/errorMiddleware");
 
 const PORT = process.env.PORT || 3000;
@@ -17,15 +19,25 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:5173", // React frontend URL or your domain
-    credentials: true, // Allow cookies
+    origin: "http://localhost:5173", // Your frontend URL
+    credentials: true,
   })
 );
 
 // Routes
+app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/courseroadmap", courseRoadmapRoutes);
+app.use("/api/enrollments", enrollmentRoutes);
+
+// 404 for unmatched routes
+app.use((req, res) => {
+  return res.status(404).json({
+    success: false,
+    message: `Route ${req.originalUrl} not found`,
+  });
+});
 
 // Error Handler
 app.use(errorMiddleware);
