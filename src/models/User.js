@@ -28,10 +28,18 @@ const userSchema = new mongoose.Schema(
       // If you want to hide password by default when querying:
       // select: false,
     },
+    photoURL: {
+      type: String,
+      validate: {
+        validator: validator.isURL,
+        message: "Invalid photo url.",
+      },
+      default:
+        "https://t3.ftcdn.net/jpg/07/24/59/76/240_F_724597608_pmo5BsVumFcFyHJKlASG2Y2KpkkfiYUU.jpg",
+    },
   },
   { timestamps: true }
 );
-
 
 userSchema.virtual("enrollments", {
   ref: "Enrollment",
@@ -41,18 +49,15 @@ userSchema.virtual("enrollments", {
 
 // Instance: sign JWT for this user
 userSchema.methods.getJWT = function () {
-  return jwt.sign(
-    { id: this._id.toString(), email: this.email },
-    JWT_SECRET,
-    { expiresIn: JWT_EXPIRES_IN }
-  );
+  return jwt.sign({ id: this._id.toString(), email: this.email }, JWT_SECRET, {
+    expiresIn: JWT_EXPIRES_IN,
+  });
 };
 
 // Instance: compare plaintext to hashed password
 userSchema.methods.validatePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
-
 
 userSchema.set("toObject", { virtuals: true });
 userSchema.set("toJSON", { virtuals: true });

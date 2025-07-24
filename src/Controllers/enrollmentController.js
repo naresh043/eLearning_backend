@@ -4,13 +4,15 @@ const Course = require("../models/Course");
 
 exports.enrollInCourse = async (req, res, next) => {
   try {
-    const userId = req.user.id;          // from auth middleware
+    const userId = req.user.id; // from auth middleware
     const { courseId } = req.params;
 
     // Ensure course exists
     const course = await Course.findById(courseId).select("_id");
     if (!course) {
-      return res.status(404).json({ success: false, message: "Course not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Course not found" });
     }
 
     // Create (or get existing) enrollment
@@ -26,14 +28,14 @@ exports.enrollInCourse = async (req, res, next) => {
     if (err.code === 11000) {
       return res
         .status(409)
-        .json({ success: false, message: "User already enrolled in this course" });
+        .json({
+          success: false,
+          message: "User already enrolled in this course",
+        });
     }
     next(err);
   }
 };
-
-
-
 
 exports.getMyEnrolledCourses = async (req, res, next) => {
   try {
@@ -42,7 +44,8 @@ exports.getMyEnrolledCourses = async (req, res, next) => {
     const enrollments = await Enrollment.find({ user: userId })
       .populate({
         path: "course",
-        select: "courseName courseLogo category duration instructor rating price",
+        select:
+          "courseName courseLogo category duration instructor rating price courseLink",
       })
       .lean();
 
@@ -51,9 +54,6 @@ exports.getMyEnrolledCourses = async (req, res, next) => {
     next(err);
   }
 };
-
-
-
 
 exports.updateProgress = async (req, res, next) => {
   try {
@@ -73,10 +73,12 @@ exports.updateProgress = async (req, res, next) => {
       { user: userId, course: courseId },
       update,
       { new: true }
-    );
+    ).populate("course");
 
     if (!enrollment) {
-      return res.status(404).json({ success: false, message: "Enrollment not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Enrollment not found" });
     }
 
     res.json({ success: true, data: enrollment });
