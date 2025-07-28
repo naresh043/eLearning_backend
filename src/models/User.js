@@ -7,13 +7,13 @@ const { JWT_SECRET = "eLearning", JWT_EXPIRES_IN = "7d" } = process.env;
 
 // Custom URL validator that allows empty strings
 const optionalUrlValidator = {
-  validator: function(value) {
+  validator: function (value) {
     // Allow empty strings or null/undefined
-    if (!value || value.trim() === '') return true;
+    if (!value || value.trim() === "") return true;
     // Otherwise validate as URL
     return validator.isURL(value);
   },
-  message: "Invalid URL format."
+  message: "Invalid URL format.",
 };
 
 const userSchema = new mongoose.Schema(
@@ -46,28 +46,30 @@ const userSchema = new mongoose.Schema(
     },
 
     // Additional profile fields
-    phone: { type: String, trim: true },
-    location: { type: String, trim: true },
-    bio: { type: String, trim: true },
-    dateOfBirth: { type: Date },
-    gender: { 
-      type: String, 
+    phone: { type: String, trim: true, default: "" },
+    location: { type: String, trim: true, default: "" },
+    bio: { type: String, trim: true, default: "" },
+    dateOfBirth: { type: Date, default: null },
+    gender: {
+      type: String,
       enum: ["Male", "Female", "Other", "Prefer not to say", ""],
-      default: ""
+      default: "",
     },
-    profession: { type: String, trim: true },
-    experience: { type: String, trim: true },
+    profession: { type: String, trim: true, default: "" },
+    experience: { type: String, trim: true, default: "" },
 
-    interests: [{ 
-      type: String, 
-      trim: true,
-      validate: {
-        validator: function(value) {
-          return value && value.trim().length > 0;
+    interests: [
+      {
+        type: String,
+        trim: true,
+        validate: {
+          validator: function (value) {
+            return value && value.trim().length > 0;
+          },
+          message: "Interest cannot be empty",
         },
-        message: "Interest cannot be empty"
-      }
-    }],
+      },
+    ],
 
     socialLinks: {
       linkedin: {
@@ -98,25 +100,30 @@ const userSchema = new mongoose.Schema(
 );
 
 // Pre-save middleware to clean up empty strings and arrays
-userSchema.pre('save', function(next) {
+userSchema.pre("save", function (next) {
+  // remove the empty string
+  if (this.dateOfBirth === "") {
+    this.dateOfBirth = undefined;
+  }
+
   // Clean up interests array - remove empty strings
   if (this.interests) {
-    this.interests = this.interests.filter(interest => 
-      interest && interest.trim().length > 0
+    this.interests = this.interests.filter(
+      (interest) => interest && interest.trim().length > 0
     );
   }
 
   // Clean up social links - remove empty strings
   if (this.socialLinks) {
-    Object.keys(this.socialLinks).forEach(key => {
-      if (!this.socialLinks[key] || this.socialLinks[key].trim() === '') {
+    Object.keys(this.socialLinks).forEach((key) => {
+      if (!this.socialLinks[key] || this.socialLinks[key].trim() === "") {
         this.socialLinks[key] = undefined;
       }
     });
   }
 
   // Clean up photoURL if empty
-  if (this.photoURL && this.photoURL.trim() === '') {
+  if (this.photoURL && this.photoURL.trim() === "") {
     this.photoURL = undefined;
   }
 
@@ -124,28 +131,71 @@ userSchema.pre('save', function(next) {
 });
 
 // Pre-update middleware for findOneAndUpdate operations
-userSchema.pre(['findOneAndUpdate', 'updateOne'], function(next) {
+userSchema.pre(["findOneAndUpdate", "updateOne"], function (next) {
   const update = this.getUpdate();
-  
-  // Clean up interests if being updated
-  if (update.interests) {
-    update.interests = update.interests.filter(interest => 
-      interest && interest.trim().length > 0
+
+  // ✅ Clean top-level fields
+  if (update.dateOfBirth === "") {
+    update.dateOfBirth = undefined;
+  }
+
+  if (typeof update.photoURL === "string" && update.photoURL.trim() === "") {
+    update.photoURL = undefined;
+  }
+
+  if (update.interests === "") {
+    update.interests = [];
+  } else if (Array.isArray(update.interests)) {
+    update.interests = update.interests.filter(
+      (interest) => interest && interest.trim().length > 0
     );
   }
 
-  // Clean up social links if being updated
-  if (update.socialLinks) {
-    Object.keys(update.socialLinks).forEach(key => {
-      if (!update.socialLinks[key] || update.socialLinks[key].trim() === '') {
+  if (update.socialLinks && typeof update.socialLinks === "object") {
+    Object.keys(update.socialLinks).forEach((key) => {
+      if (
+        typeof update.socialLinks[key] === "string" &&
+        update.socialLinks[key].trim() === ""
+      ) {
         update.socialLinks[key] = undefined;
       }
     });
   }
 
-  // Clean up photoURL if empty
-  if (update.photoURL && update.photoURL.trim() === '') {
-    update.photoURL = undefined;
+  // ✅ Clean nested $set values
+  if (update.$set) {
+    if (update.$set.dateOfBirth === "") {
+      update.$set.dateOfBirth = undefined;
+    }
+
+    if (
+      typeof update.$set.photoURL === "string" &&
+      update.$set.photoURL.trim() === ""
+    ) {
+      update.$set.photoURL = undefined;
+    }
+
+    if (update.$set.interests === "") {
+      update.$set.interests = [];
+    } else if (Array.isArray(update.$set.interests)) {
+      update.$set.interests = update.$set.interests.filter(
+        (interest) => interest && interest.trim().length > 0
+      );
+    }
+
+    if (
+      update.$set.socialLinks &&
+      typeof update.$set.socialLinks === "object"
+    ) {
+      Object.keys(update.$set.socialLinks).forEach((key) => {
+        if (
+          typeof update.$set.socialLinks[key] === "string" &&
+          update.$set.socialLinks[key].trim() === ""
+        ) {
+          update.$set.socialLinks[key] = undefined;
+        }
+      });
+    }
   }
 
   next();

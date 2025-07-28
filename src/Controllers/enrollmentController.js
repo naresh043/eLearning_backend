@@ -1,6 +1,7 @@
 // controllers/enrollmentController.js
 const Enrollment = require("../models/Enrollment");
 const Course = require("../models/Course");
+const User = require("../models/User");
 
 exports.enrollInCourse = async (req, res, next) => {
   try {
@@ -15,23 +16,41 @@ exports.enrollInCourse = async (req, res, next) => {
         .json({ success: false, message: "Course not found" });
     }
 
-    // Create (or get existing) enrollment
-    const enrollment = await Enrollment.findOneAndUpdate(
-      { user: userId, course: courseId },
-      { $setOnInsert: { startedAt: new Date() } },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
+    // // Create (or get existing) enrollment
+    // const enrollment = await Enrollment.findOneAndUpdate(
+    //   { user: userId, course: courseId },
+    //   { $setOnInsert: { startedAt: new Date() } },
+    //   { upsert: true, new: true, setDefaultsOnInsert: true }
+    // );
+
+    // Check if user already enrolled
+    let enrollment = await Enrollment.findOne({
+      user: userId,
+      course: courseId,
+    });
+
+    if (!enrollment) {
+      // Create new enrollment
+      enrollment = await Enrollment.create({
+        user: userId,
+        course: courseId,
+        startedAt: new Date(),
+      });
+
+      // 🔥 Increment the user's coursesEnrolled count
+      await User.findByIdAndUpdate(userId, {
+        $inc: { "stats.coursesEnrolled": 1 },
+      });
+    }
 
     res.json({ success: true, data: enrollment });
   } catch (err) {
     // Handle duplicate key (already enrolled)
     if (err.code === 11000) {
-      return res
-        .status(409)
-        .json({
-          success: false,
-          message: "User already enrolled in this course",
-        });
+      return res.status(409).json({
+        success: false,
+        message: "User already enrolled in this course",
+      });
     }
     next(err);
   }
@@ -55,33 +74,98 @@ exports.getMyEnrolledCourses = async (req, res, next) => {
   }
 };
 
+// exports.updateProgress = async (req, res, next) => {
+//   try {
+//     const userId = req.user.id;
+//     const { courseId } = req.params;
+//     const { progress } = req.body; // 0–100
+
+//     if (progress >= 100) {
+//       update.status = "completed";
+//       update.completedAt = new Date();
+
+//       // ✅ Only increment if it was not already marked as completed
+//       const existing = await Enrollment.findOne({
+//         user: userId,
+//         course: courseId,
+//       });
+//       if (existing && existing.status !== "completed") {
+//         await User.findByIdAndUpdate(userId, {
+//           $inc: { "stats.coursesCompleted": 1 },
+//         });
+//       }
+//     }
+
+//     const enrollment = await Enrollment.findOneAndUpdate(
+//       { user: userId, course: courseId },
+//       update,
+//       { new: true }
+//     ).populate("course");
+
+//     if (!enrollment) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Enrollment not found" });
+//     }
+
+//     const updatedUser = await User.findById(userId).select("stats");
+//     res.json({ success: true, data: enrollment, stats: updatedUser.stats });
+//   } catch (err) {
+//     next(err);
+//   }
+// };
+
+
 exports.updateProgress = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { courseId } = req.params;
-    const { progress } = req.body; // 0–100
+    const { progress } = req.body; // Expected value: 0 - 100
+
+    // Validate progress
+    if (typeof progress !== "number" || progress < 0 || progress > 100) {
+      return res.status(400).json({
+        success: false,
+        message: "Progress must be a number between 0 and 100",
+      });
+    }
 
     const update = { progress };
+
+    // Fetch existing enrollment to determine old status
+    const existing = await Enrollment.findOne({ user: userId, course: courseId });
+
+    if (!existing) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Enrollment not found" });
+    }
+
+    // Status logic
     if (progress >= 100) {
-      update.status = "completed";
-      update.completedAt = new Date();
-    } else if (progress > 0) {
+      if (existing.status !== "completed") {
+        update.status = "completed";
+        update.completedAt = new Date();
+
+        // Increment user.completed count
+        await User.findByIdAndUpdate(userId, {
+          $inc: { "stats.coursesCompleted": 1 },
+        });
+      }
+    } else if (progress > 0 && existing.status !== "in-progress") {
       update.status = "in-progress";
     }
 
+    // Update enrollment
     const enrollment = await Enrollment.findOneAndUpdate(
       { user: userId, course: courseId },
       update,
       { new: true }
     ).populate("course");
 
-    if (!enrollment) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Enrollment not found" });
-    }
-
-    res.json({ success: true, data: enrollment });
+    // Send response
+    const updatedUser = await User.findById(userId).select("stats");
+    res.json({ success: true, data: enrollment, stats: updatedUser.stats });
   } catch (err) {
     next(err);
   }

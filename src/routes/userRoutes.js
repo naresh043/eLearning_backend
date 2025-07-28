@@ -93,13 +93,13 @@ router.post("/login", async (req, res, next) => {
 
     let token = await user.getJWT();
     // Secure Cookie
-      res.cookie("token", token, {
-        httpOnly: false , // Prevents client-side JS access
-        secure: false, // Only send cookie over HTTPS in production
-        sameSite: "lax",
-        maxAge: 24 * 60 * 60 * 1000, // 1 day (cookie persists)
-        path: "/", // Accessible for all routes
-      });
+    res.cookie("token", token, {
+      httpOnly: false, // Prevents client-side JS access
+      secure: false, // Only send cookie over HTTPS in production
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000, // 1 day (cookie persists)
+      path: "/", // Accessible for all routes
+    });
 
     // res.cookie("token", token, {
     //   httpOnly: true,
@@ -173,10 +173,11 @@ router.delete("/:id", verifyToken, async (req, res, next) => {
 });
 
 //get profile
-router.get("/profile", verifyToken, (req, res) => {
+router.get("/profile", verifyToken, async (req, res) => {
+  const user = await User.findById(req.user.id).select("-password").lean();
   res.status(200).json({
     success: true,
-    data: req.user,
+    data: user,
   });
 });
 
