@@ -17,12 +17,20 @@ const app = express();
 // Middlewares
 app.use(express.json());
 app.use(cookieParser());
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://e-learnify-nine.vercel.app",
+];
+
 app.use(
   cors({
-    origin: "https://e-learnify-nine.vercel.app",
-    // origin: "http://localhost:5173",
-     // developed version 
-
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
