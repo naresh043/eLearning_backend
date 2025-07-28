@@ -19,7 +19,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "https://e-learnify-nine.vercel.app/", // Your frontend URL
+    origin: "https://e-learnify-nine.vercel.app", // Your frontend URL
     credentials: true,
   })
 );
