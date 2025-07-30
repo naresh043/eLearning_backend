@@ -1,24 +1,12 @@
 const express = require("express");
 const User = require("../models/User");
+const Enrollment=require("../models/Enrollment")
 const router = express.Router();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const verifyToken = require("../middleware/verifyToken"); // Import middleware
 
-// GET all users
-router.get("/", async (req, res, next) => {
-  try {
-    const users = await User.find();
-    if (users.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No users found" });
-    }
-    res.status(200).json({ success: true, data: users });
-  } catch (err) {
-    next(err);
-  }
-});
+
 
 // Register a new user
 router.post("/register", async (req, res, next) => {
@@ -75,8 +63,11 @@ router.post("/login", async (req, res, next) => {
         .json({ success: false, message: "Email and password are required" });
     }
 
+    console.log(email)
+
     // Check if user exists
     const user = await User.findOne({ email });
+    console.log(user)
     if (!user) {
       return res
         .status(404)
@@ -122,6 +113,79 @@ router.post("/login", async (req, res, next) => {
   }
 });
 
+router.post("/logout", (req, res, next) => {
+  try {
+    const hadToken = Boolean(req.cookies?.token);
+    // Clear cookie (must match options used at login)
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      path: "/",
+    });
+    return res.status(200).json({
+      success: true,
+      message: "Logout successful.",
+      hadToken, // helpful for debugging; remove in prod if you want
+    });
+  } catch (err) {
+    return next(err); // forward to errorMiddleware
+  }
+});
+
+router.patch("/forgot-password", verifyToken, async (req, res) => {
+  try {
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ message: "Password is required" });
+    }
+
+    const userId = req.user._id; // From verifyToken
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Hash new password
+    const passwordHash = await bcrypt.hash(password, 10);
+    user.password = passwordHash;
+
+    // Save updated user
+    await user.save();
+
+    res.status(200).json({ message: "Password reset successful" });
+  } catch (err) {
+    console.error("Error:", err.message);
+    res.status(500).json({ message: "Error resetting password" });
+  }
+});
+
+//get profile
+router.get("/profile", verifyToken, async (req, res) => {
+  const user = await User.findById(req.user.id).select("-password").lean();
+  res.status(200).json({
+    success: true,
+    data: user,
+  });
+});
+
+// GET all users
+router.get("/", async (req, res, next) => {
+  try {
+    const users = await User.find();
+    if (users.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No users found" });
+    }
+    res.status(200).json({ success: true, data: users });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // PATCH - Update a user by ID
 router.patch("/:id", verifyToken, async (req, res, next) => {
   try {
@@ -152,52 +216,27 @@ router.patch("/:id", verifyToken, async (req, res, next) => {
 });
 
 // DELETE - Delete a user by ID
-router.delete("/:id", verifyToken, async (req, res, next) => {
+router.delete("/me", verifyToken, async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const userId = req.user._id;
 
-    const deletedUser = await User.findByIdAndDelete(id);
+    const deletedUser = await User.findByIdAndDelete(userId);
     if (!deletedUser) {
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
     }
 
+    await Enrollment.deleteMany({ user: userId });
+
     res.status(200).json({
       success: true,
-      message: "User deleted successfully",
+      message: "User and related data deleted successfully",
     });
   } catch (err) {
     next(err);
   }
 });
 
-//get profile
-router.get("/profile", verifyToken, async (req, res) => {
-  const user = await User.findById(req.user.id).select("-password").lean();
-  res.status(200).json({
-    success: true,
-    data: user,
-  });
-});
 
-router.post("/logout", (req, res, next) => {
-  try {
-    const hadToken = Boolean(req.cookies?.token);
-    // Clear cookie (must match options used at login)
-    res.clearCookie("token", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      path: "/",
-    });
-    return res.status(200).json({
-      success: true,
-      message: "Logout successful.",
-      hadToken, // helpful for debugging; remove in prod if you want
-    });
-  } catch (err) {
-    return next(err); // forward to errorMiddleware
-  }
-});
 module.exports = router;

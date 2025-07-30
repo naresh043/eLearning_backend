@@ -60,7 +60,10 @@ exports.getMyEnrolledCourses = async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    const enrollments = await Enrollment.find({ user: userId })
+    const enrollments = await Enrollment.find({
+      user: userId,
+      status: { $ne: "completed" },
+    })
       .populate({
         path: "course",
         select:
@@ -70,6 +73,48 @@ exports.getMyEnrolledCourses = async (req, res, next) => {
 
     res.json({ success: true, data: enrollments });
   } catch (err) {
+    next(err);
+  }
+};
+
+exports.getCompletedCourses = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const completed = await Enrollment.find({
+      user: userId,
+      status: "completed",
+    })
+      .populate({
+        path: "course",
+        select: "courseName courseLogo category courseLink",
+      })
+      .lean();
+
+    if (!completed || completed.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "You haven't completed any courses yet.",
+        data: [],
+      });
+    }
+
+    // Filter out enrollments where course was deleted
+    const validCourses = completed.filter((e) => e.course !== null);
+
+    if (validCourses.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "All completed courses have been deleted.",
+        data: [],
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: validCourses.map((e) => e.course),
+    });
+  } catch (err) {
+    console.error("Error in getMyCompletedCourses:", err);
     next(err);
   }
 };
@@ -115,7 +160,6 @@ exports.getMyEnrolledCourses = async (req, res, next) => {
 //   }
 // };
 
-
 exports.updateProgress = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -133,7 +177,10 @@ exports.updateProgress = async (req, res, next) => {
     const update = { progress };
 
     // Fetch existing enrollment to determine old status
-    const existing = await Enrollment.findOne({ user: userId, course: courseId });
+    const existing = await Enrollment.findOne({
+      user: userId,
+      course: courseId,
+    });
 
     if (!existing) {
       return res

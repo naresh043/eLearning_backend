@@ -9,6 +9,10 @@ router.post("/courses/:courseId/enroll", auth, enrollmentCtrl.enrollInCourse);
 // GET /api/me/enrolled-courses
 router.get("/me/enrolled-courses", auth, enrollmentCtrl.getMyEnrolledCourses);
 
+// GET /api/me/completed-courses
+router.get("/me/completed-courses", auth, enrollmentCtrl.getCompletedCourses);
+
+
 // PATCH /api/courses/:courseId/progress
 router.patch("/courses/:courseId/progress", auth, enrollmentCtrl.updateProgress);
 
