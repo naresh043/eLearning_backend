@@ -194,9 +194,14 @@ exports.updateProgress = async (req, res, next) => {
         update.status = "completed";
         update.completedAt = new Date();
 
+        const user = await User.findById(userId);
+        const enrolled = user.stats.coursesEnrolled;
         // Increment user.completed count
         await User.findByIdAndUpdate(userId, {
-          $inc: { "stats.coursesCompleted": 1 },
+          $inc: {
+            "stats.coursesCompleted": 1,
+            "stats.coursesEnrolled": enrolled > 0 ? -1 : 0,
+          },
         });
       }
     } else if (progress > 0 && existing.status !== "in-progress") {
