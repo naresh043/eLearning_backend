@@ -1,3 +1,5 @@
+const {OAuth2Client }=require("google-auth-library")
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const express = require("express");
 const User = require("../models/User");
 const Enrollment=require("../models/Enrollment")
@@ -232,6 +234,66 @@ router.delete("/me", verifyToken, async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: "User and related data deleted successfully",
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+
+router.post("/google-login", async (req, res, next) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "Google token is required",
+      });
+    }
+
+    // 1️⃣ Verify token with Google
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const { email, name, picture, sub } = payload;
+
+    // 2️⃣ Find or create user
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = await User.create({
+        name,
+        email,
+        googleId: sub,
+        avatar: picture,
+        provider: "google",
+      });
+    }
+
+    // 3️⃣ Issue YOUR JWT
+    const jwtToken = await user.getJWT();
+
+    // 4️⃣ Store JWT in HttpOnly cookie
+    res.cookie("token", jwtToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 24 * 60 * 60 * 1000,
+      path: "/",
+    });
+
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    // 5️⃣ Send user object to frontend
+    res.status(200).json({
+      success: true,
+      message: "Google login successful",
+      data: userResponse,
     });
   } catch (err) {
     next(err);

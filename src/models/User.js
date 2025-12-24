@@ -31,19 +31,32 @@ const userSchema = new mongoose.Schema(
         message: "Invalid email address.",
       },
     },
-
-    password: {
+    provider: {
       type: String,
-      required: true,
-      minlength: 6,
+      enum: ["local", "google"],
+      default: "local",
     },
 
-    photoURL: {
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true, // allows multiple null values
+    },
+
+    avatar: {
       type: String,
       validate: optionalUrlValidator,
       default:
         "https://t3.ftcdn.net/jpg/07/24/59/76/240_F_724597608_pmo5BsVumFcFyHJKlASG2Y2KpkkfiYUU.jpg",
     },
+    password: {
+      type: String,
+      minlength: 6,
+      required: function () {
+        return this.provider === "local";
+      },
+    },
+
 
     // Additional profile fields
     phone: { type: String, trim: true, default: "" },
@@ -123,8 +136,8 @@ userSchema.pre("save", function (next) {
   }
 
   // Clean up photoURL if empty
-  if (this.photoURL && this.photoURL.trim() === "") {
-    this.photoURL = undefined;
+  if (this.avatar && this.avatar.trim() === "") {
+    this.avatar = undefined;
   }
 
   next();
@@ -139,8 +152,8 @@ userSchema.pre(["findOneAndUpdate", "updateOne"], function (next) {
     update.dateOfBirth = undefined;
   }
 
-  if (typeof update.photoURL === "string" && update.photoURL.trim() === "") {
-    update.photoURL = undefined;
+  if (typeof update.avatar === "string" && update.avatar.trim() === "") {
+    update.avatar = undefined;
   }
 
   if (update.interests === "") {
@@ -169,10 +182,10 @@ userSchema.pre(["findOneAndUpdate", "updateOne"], function (next) {
     }
 
     if (
-      typeof update.$set.photoURL === "string" &&
-      update.$set.photoURL.trim() === ""
+      typeof update.$set.avatar === "string" &&
+      update.$set.avatar.trim() === ""
     ) {
-      update.$set.photoURL = undefined;
+      update.$set.avatar = undefined;
     }
 
     if (update.$set.interests === "") {
