@@ -1,14 +1,12 @@
-const {OAuth2Client }=require("google-auth-library")
+const { OAuth2Client } = require("google-auth-library");
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const express = require("express");
 const User = require("../models/User");
-const Enrollment=require("../models/Enrollment")
+const Enrollment = require("../models/Enrollment");
 const router = express.Router();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const verifyToken = require("../middleware/verifyToken"); // Import middleware
-
-
 
 // Register a new user
 router.post("/register", async (req, res, next) => {
@@ -65,11 +63,11 @@ router.post("/login", async (req, res, next) => {
         .json({ success: false, message: "Email and password are required" });
     }
 
-    console.log(email)
+    console.log(email);
 
     // Check if user exists
     const user = await User.findOne({ email });
-    console.log(user)
+    console.log(user);
     if (!user) {
       return res
         .status(404)
@@ -239,7 +237,6 @@ router.delete("/me", verifyToken, async (req, res, next) => {
   }
 });
 
-
 router.post("/google-login", async (req, res, next) => {
   try {
     const { token } = req.body;
@@ -293,11 +290,11 @@ router.post("/google-login", async (req, res, next) => {
       success: true,
       message: "Google login successful",
       data: userResponse,
+      authenticated: true,
     });
   } catch (err) {
     next(err);
   }
 });
-
 
 module.exports = router;
