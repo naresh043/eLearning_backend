@@ -25,6 +25,7 @@
     "google-auth-library": "^10.5.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.4",
+    "razorpay": "^2.9.6",
     "validator": "^13.15.15"
   }
 }

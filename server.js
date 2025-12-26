@@ -9,6 +9,7 @@ const courseRoutes = require("./src/routes/courseRoutes");
 const authRoutes = require("./src/routes/authRoutes");
 const courseRoadmapRoutes = require("./src/routes/courseRoadmapRoutes");
 const enrollmentRoutes = require("./src/routes/enrollmentRoutes");
+const paymentRoutes =require('./src/routes/payment')
 const errorMiddleware = require("./src/middleware/errorMiddleware");
 
 const PORT = process.env.PORT || 3000;
@@ -41,6 +42,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/courseroadmap", courseRoadmapRoutes);
 app.use("/api/enrollments", enrollmentRoutes);
+app.use("/api/payment", paymentRoutes);
+
 
 // 404 for unmatched routes
 app.use((req, res) => {

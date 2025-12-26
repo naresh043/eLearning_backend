@@ -9,35 +9,57 @@ const enrollmentSchema = new Schema(
       required: true,
       index: true,
     },
+
     course: {
       type: Schema.Types.ObjectId,
       ref: "Course",
       required: true,
       index: true,
     },
+
+    // 🔐 PAYMENT INFO
+    payment: {
+      provider: {
+        type: String,
+        enum: ["razorpay"],
+      },
+      orderId: String,
+      paymentId: String,
+      signature: String,
+      amount: Number,
+      currency: {
+        type: String,
+        default: "INR",
+      },
+      status: {
+        type: String,
+        enum: ["paid", "failed", "refunded"],
+        default: "paid",
+      },
+      paidAt: Date,
+    },
+
     status: {
       type: String,
       enum: ["enrolled", "in-progress", "completed", "cancelled"],
       default: "enrolled",
     },
+
     progress: {
       type: Number,
       min: 0,
       max: 100,
       default: 0,
     },
+
     startedAt: {
       type: Date,
       default: Date.now,
     },
-    completedAt: {
-      type: Date,
-    },
-    certificateUrl: {
-      type: String,
-      trim: true,
-    },
-    // room for lesson-level progress refs later
+
+    completedAt: Date,
+
+    certificateUrl: String,
   },
   { timestamps: true }
 );

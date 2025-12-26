@@ -16,6 +16,13 @@ exports.enrollInCourse = async (req, res, next) => {
         .json({ success: false, message: "Course not found" });
     }
 
+    if (course.price > 0) {
+      return res.status(403).json({
+        success: false,
+        message: "Payment required to enroll in this course",
+      });
+    }
+
     // // Create (or get existing) enrollment
     // const enrollment = await Enrollment.findOneAndUpdate(
     //   { user: userId, course: courseId },

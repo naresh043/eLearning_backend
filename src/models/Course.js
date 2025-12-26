@@ -86,9 +86,8 @@ const courseSchema = new mongoose.Schema(
       default: 0,
     },
     price: {
-      type: String, // Keeping as string because values like "Free" or "$70"
+      type: Number, 
       required: true,
-      trim: true,
     },
     completionCertificate: {
       type: Boolean,

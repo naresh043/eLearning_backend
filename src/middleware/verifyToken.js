@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 const verifyToken = async (req, res, next) => {
   try {
     const token = req.cookies.token;
-    console.log(token);
+    // console.log(token);
 
     if (!token) {
       return res
@@ -13,7 +13,7 @@ const verifyToken = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log(decoded);
+    // console.log(decoded);
 
     // Find the user by ID from token payload
     const user = await User.findById(decoded.id).select("-password");
