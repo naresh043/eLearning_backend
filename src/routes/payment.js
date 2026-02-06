@@ -15,6 +15,8 @@ const transporter = nodemailer.createTransport({
     user: process.env.GMAIL_USER,
     pass: process.env.GMAIL_APP_PASSWORD,
   },
+  // Force IPv4 to avoid ENETUNREACH on some networks/deployments that lack IPv6
+  family: 4, 
 });
 
 async function sendPaymentSuccessEmail(userEmail) {
