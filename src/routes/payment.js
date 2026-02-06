@@ -7,6 +7,7 @@ const razorpay = require("../config/razorpay");
 const router = express.Router();
 const crypto = require("node:crypto");
 
+<<<<<<< HEAD
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
@@ -119,6 +120,8 @@ async function sendPaymentSuccessEmail(userEmail) {
   }
 }
 
+=======
+>>>>>>> parent of f0e31d0 (feat: Implement payment routes for Razorpay integration, course enrollment, and success email notification.)
 router.post("/create-order", auth, async (req, res) => {
   const { amount, courseId } = req.body; // amount in rupees
 
@@ -194,9 +197,6 @@ router.post("/verify-payment", auth, async (req, res) => {
       amount,
       status: "SUCCESS",
     });
-
-    // Send success email
-    await sendPaymentSuccessEmail(req.user.email);
 
     const populatedEnrollment = await Enrollment.findById(
       enrollment._id
